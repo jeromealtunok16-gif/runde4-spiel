@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zahlenfinde – Runde 4 (fehlende Zahlen)</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 24px 12px;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 1200px;
+      background: #ffffff;
+      border-radius: 0;
+      padding: 0 0 20px;
+      box-shadow:
+        0 12px 24px rgba(0,0,0,0.18),
+        0 0 0 1px rgba(209,213,219,0.9);
+      border-top: 6px solid #A6192E;
+    }
+
+    .game-header {
+      padding: 14px 24px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      letter-spacing: 0.02em;
+      color: #A6192E;
+      font-weight: 700;
+    }
+
+    .title-block p {
+      margin: 4px 0 0;
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+
+    .info-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .badge,
+    .stat {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #111827;
+    }
+
+    .badge {
+      background: #A6192E;
+      border-color: #A6192E;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .stat-label {
+      color: #6b7280;
+    }
+
+    .controls-row {
+      padding: 10px 24px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #111827;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease,
+                  background 0.12s ease, border 0.12s ease;
+    }
+
+    .btn-primary {
+      border-color: #A6192E;
+      background: #A6192E;
+      color: #f9fafb;
+      font-weight: 600;
+      box-shadow: 0 8px 16px rgba(166,25,46,0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(166,25,46,0.45);
+    }
+
+    .btn-ghost {
+      background: #f9fafb;
+      color: #111827;
+    }
+
+    .btn-ghost:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .board-wrapper {
+      position: relative;
+      margin-top: 8px;
+      padding: 0 24px 0;
+    }
+
+    .board {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #ffffff;
+    }
+
+    .round-4 {
+      background-image: url("runde4.png");
+    }
+
+    .number-bubble {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    }
+
+    .board.debug .number-bubble {
+      outline: 1px dashed rgba(0,0,0,0.35);
+    }
+
+    .answer-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .answer-panel input[type="number"] {
+      width: 70px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .result-text {
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    .result-ok { color: #15803d; }
+    .result-error { color: #b91c1c; }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(17,24,39,0.55), rgba(17,24,39,0.8));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .overlay-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 20px 22px;
+      border: 1px solid #d1d5db;
+      max-width: 440px;
+      text-align: center;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+    }
+
+    .overlay-card h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.5rem;
+      color: #A6192E;
+    }
+
+    .overlay-card p {
+      margin: 4px 0;
+      font-size: 0.95rem;
+      color: #4b5563;
+    }
+
+    .overlay-buttons {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .game-container {
+        padding-bottom: 14px;
+      }
+      .title-block h1 {
+        font-size: 1.35rem;
+      }
+      .board-wrapper {
+        padding: 0 12px;
+      }
+      .board {
+        aspect-ratio: 9 / 16;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="game-header">
+    <div class="title-block">
+      <h1>Runde 4 – Welche Zahlen fehlen?</h1>
+      <p>Auf dieser Folie verstecken sich die Zahlen <strong>1 bis 49</strong> – aber <strong>2 fehlen</strong>…</p>
+    </div>
+    <div class="info-grid">
+      <div class="badge">
+        🔍 <span>Runde 4</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Fehlende Zahlen:</span>
+        <span>genau 2</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="answer-panel">
+      <span class="hint">Trage die zwei fehlenden Zahlen ein:</span>
+      <input type="number" id="guess1" min="1" max="49" />
+      <input type="number" id="guess2" min="1" max="49" />
+      <button class="btn btn-primary" id="check-btn">Lösung prüfen</button>
+      <button class="btn btn-ghost" id="show-solution-btn">Lösung anzeigen</button>
+    </div>
+    <div>
+      <div class="hint">
+        Tipp: Schau dir die Zahlen systematisch an – was fehlt in der Reihe?
+      </div>
+      <div id="result" class="result-text"></div>
+    </div>
+  </div>
+
+  <div class="board-wrapper">
+    <div class="board round-4" id="board"></div>
+
+    <div class="overlay" id="overlay" style="display:none;">
+      <div class="overlay-card" id="overlay-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const board = document.getElementById("board");
+  const resultEl = document.getElementById("result");
+  const guess1Input = document.getElementById("guess1");
+  const guess2Input = document.getElementById("guess2");
+  const checkBtn = document.getElementById("check-btn");
+  const showSolutionBtn = document.getElementById("show-solution-btn");
+  const overlay = document.getElementById("overlay");
+  const overlayContent = document.getElementById("overlay-content");
+
+  let missingNumbers = [];
+  let layout = [];
+
+  const colorPalette = [
+    "#A6192E",
+    "#1F2933",
+    "#2563EB",
+    "#059669",
+    "#D97706"
+  ];
+
+  // cfg-Param auslesen und dekodieren
+  function decodeMissingFromCfg() {
+    const params = new URLSearchParams(window.location.search);
+    const cfg = params.get("cfg");
+    if (!cfg) return null;
+
+    let b64 = cfg.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4 !== 0) {
+      b64 += "=";
+    }
+
+    try {
+      const raw = atob(b64); // z.B. "7,23,517"
+      const parts = raw.split(",");
+      if (parts.length < 2) return null;
+
+      const n1 = parseInt(parts[0], 10);
+      const n2 = parseInt(parts[1], 10);
+      if (
+        [n1, n2].some(n => isNaN(n) || n < 1 || n > 49) ||
+        n1 === n2
+      ) {
+        return null;
+      }
+
+      return [Math.min(n1, n2), Math.max(n1, n2)];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function rectsOverlap(a, b) {
+    const ax1 = a.x - a.size / 2;
+    const ax2 = a.x + a.size / 2;
+    const ay1 = a.y - a.size / 2;
+    const ay2 = a.y + a.size / 2;
+
+    const bx1 = b.x - b.size / 2;
+    const bx2 = b.x + b.size / 2;
+    const by1 = b.y - b.size / 2;
+    const by2 = b.y + b.size / 2;
+
+    return ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
+  }
+
+  function generateLayout(numbers) {
+    const layout = [];
+    const maxAttemptsPerNumber = 400;
+
+    numbers.forEach(num => {
+      let placed = false;
+      let attempts = 0;
+
+      while (!placed && attempts < maxAttemptsPerNumber) {
+        attempts++;
+
+        const size = 4 + Math.random() * 4;
+        const x = size / 2 + Math.random() * (100 - size);
+        const y = size / 2 + Math.random() * (100 - size);
+
+        const candidate = { number: num, x, y, size };
+
+        const collision = layout.some(existing => rectsOverlap(candidate, existing));
+
+        if (!collision) {
+          layout.push(candidate);
+          placed = true;
+        }
+      }
+
+      if (!placed) {
+        console.warn("Konnte Zahl nicht platzieren:", num);
+      }
+    });
+
+    return layout;
+  }
+
+  function renderBoard() {
+    board.innerHTML = "";
+    layout.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "number-bubble";
+      el.textContent = item.number;
+
+      el.style.left = item.x + "%";
+      el.style.top = item.y + "%";
+      el.style.width = item.size + "%";
+      el.style.height = item.size + "%";
+
+      el.style.fontSize = (item.size * 0.6) + "vw";
+
+      const color = colorPalette[item.number % colorPalette.length];
+      el.style.backgroundColor = color;
+
+      const rotation = (Math.random() - 0.5) * 16;
+      el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+
+      board.appendChild(el);
+    });
+  }
+
+  function showMissingParamInfo() {
+    overlay.style.display = "flex";
+    overlayContent.innerHTML = `
+      <h2>Hinweis für Trainer</h2>
+      <p>
+        Für diese Runde wurde kein gültiger Konfigurationscode (<code>cfg</code>)
+        in der URL gefunden.
+      </p>
+      <p style="margin-top:8px;font-size:.9rem;color:#444;">
+        Bitte nutze die <strong>Host-Seite</strong>, um einen Link zu erzeugen,
+        oder starte mit einer zufälligen Auswahl.
+      </p>
+      <div class="overlay-buttons">
+        <button class="btn btn-primary" id="random-missing-btn">Zufällige fehlende Zahlen</button>
+      </div>
+    `;
+
+    document.getElementById("random-missing-btn").addEventListener("click", () => {
+      const all = Array.from({ length: 49 }, (_, i) => i + 1);
+      const idx1 = Math.floor(Math.random() * all.length);
+      const n1 = all.splice(idx1, 1)[0];
+      const idx2 = Math.floor(Math.random() * all.length);
+      const n2 = all[idx2];
+      missingNumbers = [Math.min(n1, n2), Math.max(n1, n2)];
+      startGame();
+      overlay.style.display = "none";
+    });
+  }
+
+  function startGame() {
+    const allNumbers = Array.from({ length: 49 }, (_, i) => i + 1);
+    const remaining = allNumbers.filter(n => !missingNumbers.includes(n));
+
+    layout = generateLayout(remaining);
+    renderBoard();
+
+    resultEl.textContent = "";
+    resultEl.className = "result-text";
+    guess1Input.value = "";
+    guess2Input.value = "";
+  }
+
+  function checkSolution() {
+    const g1 = parseInt(guess1Input.value, 10);
+    const g2 = parseInt(guess2Input.value, 10);
+
+    resultEl.textContent = "";
+    resultEl.className = "result-text";
+
+    if (isNaN(g1) || isNaN(g2)) {
+      resultEl.textContent = "Bitte trage zwei Zahlen zwischen 1 und 49 ein.";
+      resultEl.classList.add("result-error");
+      return;
+    }
+
+    if (g1 === g2) {
+      resultEl.textContent = "Die zwei fehlenden Zahlen sind unterschiedlich – bitte keine doppelte Zahl eingeben.";
+      resultEl.classList.add("result-error");
+      return;
+    }
+
+    const sortedGuess = [g1, g2].sort((a, b) => a - b);
+    const sortedMissing = [...missingNumbers].sort((a, b) => a - b);
+
+    if (sortedGuess[0] === sortedMissing[0] && sortedGuess[1] === sortedMissing[1]) {
+      resultEl.textContent = `✅ Richtig! Die fehlenden Zahlen sind ${sortedMissing[0]} und ${sortedMissing[1]}.`;
+      resultEl.classList.add("result-ok");
+    } else {
+      resultEl.textContent = "❌ Noch nicht ganz richtig – schau dir die Zahlen nochmal genau an.";
+      resultEl.classList.add("result-error");
+    }
+  }
+
+  function showSolution() {
+    const [a, b] = missingNumbers;
+    resultEl.textContent = `💡 Lösung: Die fehlenden Zahlen sind ${a} und ${b}.`;
+    resultEl.className = "result-text result-ok";
+  }
+
+  checkBtn.addEventListener("click", checkSolution);
+  showSolutionBtn.addEventListener("click", showSolution);
+
+  guess1Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
+  guess2Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
+
+  window.addEventListener("load", () => {
+    const fromCfg = decodeMissingFromCfg();
+    if (!fromCfg) {
+      showMissingParamInfo();
+    } else {
+      missingNumbers = fromCfg;
+      startGame();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Runde 4 – Host</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 24px 12px;
+    }
+    .host-container {
+      width: 100%;
+      max-width: 720px;
+      background: #ffffff;
+      padding: 20px 24px 24px;
+      box-shadow:
+        0 12px 24px rgba(0,0,0,0.18),
+        0 0 0 1px rgba(209,213,219,0.9);
+      border-top: 6px solid #A6192E;
+    }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; color: #A6192E; }
+    p { margin: 4px 0; font-size: 0.95rem; color: #374151; }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+      align-items: center;
+    }
+    label { font-size: 0.9rem; color: #4b5563; }
+    select {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 0.9rem;
+      min-width: 80px;
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #111827;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease,
+                  background 0.12s ease, border 0.12s ease;
+    }
+    .btn-primary {
+      border-color: #A6192E;
+      background: #A6192E;
+      color: #f9fafb;
+      font-weight: 600;
+      box-shadow: 0 8px 16px rgba(166,25,46,0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(166,25,46,0.45);
+    }
+    .section {
+      margin-top: 18px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .hint { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+    .output {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+    .msg { margin-top: 8px; font-size: 0.9rem; }
+    .msg-ok { color: #15803d; }
+    .msg-error { color: #b91c1c; }
+  </style>
+</head>
+<body>
+<div class="host-container">
+  <h1>Runde 4 – Host</h1>
+  <p>
+    Wähle hier, welche <strong>2 Zahlen (1–49)</strong> im Spiel fehlen sollen.
+    Danach erhältst du einen Link, den du an alle Teilnehmenden weitergeben kannst.
+  </p>
+
+  <div class="form-row">
+    <div>
+      <label for="missing1">Fehlende Zahl 1:</label><br>
+      <select id="missing1"></select>
+    </div>
+    <div>
+      <label for="missing2">Fehlende Zahl 2:</label><br>
+      <select id="missing2"></select>
+    </div>
+  </div>
+  <p class="hint">Die beiden Zahlen müssen verschieden sein.</p>
+
+  <div class="section">
+    <button class="btn btn-primary" id="generate-link">Teilnehmer-Link erzeugen</button>
+    <button class="btn" id="copy-link" disabled>Link kopieren</button>
+
+    <div id="link-output" class="output" style="display:none;"></div>
+    <div id="status-message" class="msg"></div>
+  </div>
+</div>
+
+<script>
+  const missing1Select = document.getElementById("missing1");
+  const missing2Select = document.getElementById("missing2");
+  const generateBtn = document.getElementById("generate-link");
+  const copyBtn = document.getElementById("copy-link");
+  const linkOutput = document.getElementById("link-output");
+  const statusMessage = document.getElementById("status-message");
+
+  // HIER deine Internet-URL der Teilnehmer-Seite eintragen:
+  const BASE_URL = window.location.origin + window.location.pathname.replace("runde4_host.html", "runde4.html");
+
+
+  function fillNumberSelect(selectEl) {
+    for (let i = 1; i <= 49; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      selectEl.appendChild(opt);
+    }
+  }
+  fillNumberSelect(missing1Select);
+  fillNumberSelect(missing2Select);
+  missing2Select.value = "2";
+
+  // Zahlen + Salz verschlüsselt (Base64URL) in cfg packen
+  function encodeMissing(n1, n2) {
+    const salt = Math.floor(Math.random() * 900 + 100); // 100–999
+    const raw = `${n1},${n2},${salt}`;
+    let b64 = btoa(raw);
+    b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    return b64;
+  }
+
+  generateBtn.addEventListener("click", () => {
+    const n1 = parseInt(missing1Select.value, 10);
+    const n2 = parseInt(missing2Select.value, 10);
+
+    statusMessage.textContent = "";
+    statusMessage.className = "msg";
+
+    if (isNaN(n1) || isNaN(n2)) {
+      statusMessage.textContent = "Bitte zwei gültige Zahlen auswählen.";
+      statusMessage.classList.add("msg-error");
+      return;
+    }
+    if (n1 === n2) {
+      statusMessage.textContent = "Die beiden fehlenden Zahlen müssen unterschiedlich sein.";
+      statusMessage.classList.add("msg-error");
+      return;
+    }
+
+    const sorted = [n1, n2].sort((a, b) => a - b);
+    const cfg = encodeMissing(sorted[0], sorted[1]);
+    const link = `${BASE_URL}?cfg=${cfg}`;
+
+    linkOutput.style.display = "block";
+    linkOutput.textContent = link;
+
+    copyBtn.disabled = false;
+    statusMessage.textContent = "Link erfolgreich erzeugt. Jetzt an Teilnehmende weitergeben.";
+    statusMessage.classList.add("msg-ok");
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    const link = linkOutput.textContent.trim();
+    if (!link) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(link);
+        statusMessage.textContent = "Link wurde in die Zwischenablage kopiert.";
+        statusMessage.className = "msg msg-ok";
+      } catch {
+        statusMessage.textContent = "Kopieren nicht möglich. Bitte Link manuell markieren und kopieren.";
+        statusMessage.className = "msg msg-error";
+      }
+    } else {
+      statusMessage.textContent = "Zwischenablage wird nicht unterstützt. Bitte Link manuell kopieren.";
+      statusMessage.className = "msg msg-error";
+    }
+  });
+</script>
+</body>
+</html>
+
