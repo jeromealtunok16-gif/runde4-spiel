@@ -162,6 +162,8 @@
       color: #ffffff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.4);
       box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+      padding: 0;
+      border: 2px solid rgba(0,0,0,0.15);
     }
 
     .board.debug .number-bubble {
@@ -232,18 +234,6 @@
       justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
-    }
-
-    .stat {
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid #d1d5db;
-      background: #f9fafb;
-      color: #111827;
     }
 
     @media (max-width: 768px) {
@@ -336,6 +326,12 @@
     "#D97706"
   ];
 
+  const fontFamilies = [
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "'Courier New', Courier, monospace",
+    "Georgia, 'Times New Roman', serif"
+  ];
+
   function updateAttemptsLabel() {
     attemptsLabel.textContent = `${attemptsLeft} / ${MAX_ATTEMPTS}`;
   }
@@ -420,7 +416,7 @@
 
   function generateLayout(numbers) {
     const layout = [];
-    const maxAttemptsPerNumber = 400;
+    const maxAttemptsPerNumber = 500;
 
     numbers.forEach(num => {
       let placed = false;
@@ -429,7 +425,7 @@
       while (!placed && attempts < maxAttemptsPerNumber) {
         attempts++;
 
-        const size = 4 + Math.random() * 4;
+        const size = 3.5 + Math.random() * 5; // kleinere + größere Bubbles
         const x = size / 2 + Math.random() * (100 - size);
         const y = size / 2 + Math.random() * (100 - size);
 
@@ -463,12 +459,21 @@
       el.style.width = item.size + "%";
       el.style.height = item.size + "%";
 
-      el.style.fontSize = (item.size * 0.6) + "vw";
+      // relative Fontgröße – etwas variieren
+      const baseFontFactor = 0.55 + Math.random() * 0.25;
+      el.style.fontSize = (item.size * baseFontFactor) + "vw";
 
+      // Farbe
       const color = colorPalette[item.number % colorPalette.length];
       el.style.backgroundColor = color;
 
-      const rotation = (Math.random() - 0.5) * 16;
+      // zufällige Schriftart & Schriftschnitt
+      const fontFamily = fontFamilies[item.number % fontFamilies.length];
+      el.style.fontFamily = fontFamily;
+      el.style.fontWeight = Math.random() > 0.5 ? "700" : "800";
+
+      // leichte Rotation
+      const rotation = (Math.random() - 0.5) * 24;
       el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
       board.appendChild(el);
@@ -536,7 +541,7 @@
       return;
     }
 
-    // Reset Farben
+    // Farben zurücksetzen
     guess1Input.style.backgroundColor = "";
     guess2Input.style.backgroundColor = "";
     guess1Input.style.borderColor = "#d1d5db";
@@ -567,14 +572,13 @@
       return; // kein Versuch verbraucht
     }
 
-    // ab hier: gültiger Versuch
-    attemptsLeft = Math.max(0, attemptsLeft - 1);
-    updateAttemptsLabel();
-
     const [a, b] = missingNumbers;
 
+    let isG1Correct = false;
+    let isG2Correct = false;
+
     if (filled1) {
-      const isG1Correct = (g1 === a || g1 === b);
+      isG1Correct = (g1 === a || g1 === b);
       if (isG1Correct) {
         guess1Input.style.backgroundColor = "#dcfce7";
         guess1Input.style.borderColor = "#16a34a";
@@ -585,7 +589,7 @@
     }
 
     if (filled2) {
-      const isG2Correct = (g2 === a || g2 === b);
+      isG2Correct = (g2 === a || g2 === b);
       if (isG2Correct) {
         guess2Input.style.backgroundColor = "#dcfce7";
         guess2Input.style.borderColor = "#16a34a";
@@ -596,8 +600,10 @@
     }
 
     const sortedMissing = [...missingNumbers].sort((x, y) => x - y);
-    const bothFilled = filled1 && filled2;
+
+    // Gewinnbedingung: beide Felder ausgefüllt und beide Zahlen exakt richtig
     let isWin = false;
+    const bothFilled = filled1 && filled2;
     if (bothFilled) {
       const sortedGuess = [g1, g2].sort((x, y) => x - y);
       isWin = sortedGuess[0] === sortedMissing[0] && sortedGuess[1] === sortedMissing[1];
@@ -613,7 +619,6 @@
       }
       cooldownHint.textContent = "Super! Du hast die Aufgabe gelöst.";
 
-      // Popup anzeigen
       overlay.style.display = "flex";
       overlayContent.innerHTML = `
         <h2>🎉 Glückwunsch, geschafft!</h2>
@@ -623,40 +628,6 @@
           Genau so hilft Struktur im Alltag dabei, Dinge schneller zu finden.
         </p>
         <div class="overlay-buttons">
-          <button class="btn btn-primary" id="close-success">Schließen</button>
-        </div>
-      `;
-      document.getElementById("close-success").addEventListener("click", () => {
-        overlay.style.display = "none";
-      });
+          <button class="btn btn-primary" id="close-success">Schließen<
 
-      return;
-    }
-
-    if (attemptsLeft > 0) {
-      resultEl.textContent = `❌ Noch nicht ganz richtig – du hast noch ${attemptsLeft} von ${MAX_ATTEMPTS} Versuchen.`;
-      resultEl.classList.add("result-error");
-    } else {
-      resultEl.textContent = "❌ Keine Versuche mehr – du bist jetzt für 2 Minuten gesperrt.";
-      resultEl.classList.add("result-error");
-      startCooldown();
-    }
-  }
-
-  checkBtn.addEventListener("click", checkSolution);
-  guess1Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
-  guess2Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
-
-  window.addEventListener("load", () => {
-    const fromCfg = decodeMissingFromCfg();
-    if (!fromCfg) {
-      showMissingParamInfo();
-    } else {
-      missingNumbers = fromCfg;
-      startGame();
-    }
-  });
-</script>
-</body>
-</html>
 
