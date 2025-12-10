@@ -192,6 +192,7 @@
       border: 1px solid #d1d5db;
       font-size: 0.9rem;
       text-align: center;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .result-text {
@@ -274,6 +275,10 @@
         <span class="stat-label">Fehlende Zahlen:</span>
         <span>genau 2</span>
       </div>
+      <div class="stat">
+        <span class="stat-label">Versuche übrig:</span>
+        <span id="attempts-label">5 / 5</span>
+      </div>
     </div>
   </div>
 
@@ -283,10 +288,9 @@
       <input type="number" id="guess1" min="1" max="49" />
       <input type="number" id="guess2" min="1" max="49" />
       <button class="btn btn-primary" id="check-btn">Lösung prüfen</button>
-      <button class="btn btn-ghost" id="show-solution-btn">Lösung anzeigen</button>
     </div>
     <div>
-      <div class="hint">
+      <div class="hint" id="cooldown-hint">
         Tipp: Schau dir die Zahlen systematisch an – was fehlt in der Reihe?
       </div>
       <div id="result" class="result-text"></div>
@@ -308,12 +312,19 @@
   const guess1Input = document.getElementById("guess1");
   const guess2Input = document.getElementById("guess2");
   const checkBtn = document.getElementById("check-btn");
-  const showSolutionBtn = document.getElementById("show-solution-btn");
   const overlay = document.getElementById("overlay");
   const overlayContent = document.getElementById("overlay-content");
+  const attemptsLabel = document.getElementById("attempts-label");
+  const cooldownHint = document.getElementById("cooldown-hint");
 
   let missingNumbers = [];
   let layout = [];
+
+  const MAX_ATTEMPTS = 5;
+  const COOLDOWN_MS = 2 * 60 * 1000; // 2 Minuten
+  let attemptsLeft = MAX_ATTEMPTS;
+  let lockUntil = null;
+  let cooldownInterval = null;
 
   const colorPalette = [
     "#A6192E",
@@ -323,7 +334,44 @@
     "#D97706"
   ];
 
-  // cfg-Param auslesen und dekodieren
+  function updateAttemptsLabel() {
+    attemptsLabel.textContent = `${attemptsLeft} / ${MAX_ATTEMPTS}`;
+  }
+
+  function setInputsEnabled(enabled) {
+    guess1Input.disabled = !enabled;
+    guess2Input.disabled = !enabled;
+    checkBtn.disabled = !enabled;
+  }
+
+  function startCooldown() {
+    lockUntil = Date.now() + COOLDOWN_MS;
+    setInputsEnabled(false);
+
+    if (cooldownInterval) clearInterval(cooldownInterval);
+
+    cooldownInterval = setInterval(() => {
+      const remaining = lockUntil - Date.now();
+      if (remaining <= 0) {
+        clearInterval(cooldownInterval);
+        cooldownInterval = null;
+        lockUntil = null;
+        attemptsLeft = MAX_ATTEMPTS;
+        updateAttemptsLabel();
+        setInputsEnabled(true);
+        cooldownHint.textContent = "Du hast wieder 5 neue Versuche. Nutze sie clever!";
+        resultEl.textContent = "";
+        resultEl.className = "result-text";
+        return;
+      }
+      const secs = Math.ceil(remaining / 1000);
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      const ss = String(s).padStart(2, "0");
+      cooldownHint.textContent = `Du hast deine 5 Versuche verbraucht. Bitte warte ${m}:${ss} Minuten für neue Versuche.`;
+    }, 500);
+  }
+
   function decodeMissingFromCfg() {
     const params = new URLSearchParams(window.location.search);
     const cfg = params.get("cfg");
@@ -335,7 +383,7 @@
     }
 
     try {
-      const raw = atob(b64); // z.B. "7,23,517"
+      const raw = atob(b64);
       const parts = raw.split(",");
       if (parts.length < 2) return null;
 
@@ -461,13 +509,38 @@
     layout = generateLayout(remaining);
     renderBoard();
 
+    attemptsLeft = MAX_ATTEMPTS;
+    updateAttemptsLabel();
+    setInputsEnabled(true);
+    lockUntil = null;
+    if (cooldownInterval) {
+      clearInterval(cooldownInterval);
+      cooldownInterval = null;
+    }
+    cooldownHint.textContent = "Tipp: Schau dir die Zahlen systematisch an – was fehlt in der Reihe?";
+
     resultEl.textContent = "";
     resultEl.className = "result-text";
     guess1Input.value = "";
     guess2Input.value = "";
+    guess1Input.style.backgroundColor = "";
+    guess2Input.style.backgroundColor = "";
+    guess1Input.style.borderColor = "#d1d5db";
+    guess2Input.style.borderColor = "#d1d5db";
   }
 
   function checkSolution() {
+    if (lockUntil && Date.now() < lockUntil) {
+      // eigentliche Sperre läuft – nichts zulassen
+      return;
+    }
+
+    // Reset Farben
+    guess1Input.style.backgroundColor = "";
+    guess2Input.style.backgroundColor = "";
+    guess1Input.style.borderColor = "#d1d5db";
+    guess2Input.style.borderColor = "#d1d5db";
+
     const g1 = parseInt(guess1Input.value, 10);
     const g2 = parseInt(guess2Input.value, 10);
 
@@ -477,35 +550,73 @@
     if (isNaN(g1) || isNaN(g2)) {
       resultEl.textContent = "Bitte trage zwei Zahlen zwischen 1 und 49 ein.";
       resultEl.classList.add("result-error");
-      return;
+      guess1Input.style.backgroundColor = "#fee2e2";
+      guess2Input.style.backgroundColor = "#fee2e2";
+      guess1Input.style.borderColor = "#b91c1c";
+      guess2Input.style.borderColor = "#b91c1c";
+      return; // zählt nicht als Versuch
     }
 
     if (g1 === g2) {
       resultEl.textContent = "Die zwei fehlenden Zahlen sind unterschiedlich – bitte keine doppelte Zahl eingeben.";
       resultEl.classList.add("result-error");
+      guess1Input.style.backgroundColor = "#fee2e2";
+      guess2Input.style.backgroundColor = "#fee2e2";
+      guess1Input.style.borderColor = "#b91c1c";
+      guess2Input.style.borderColor = "#b91c1c";
+      return; // zählt nicht als Versuch
+    }
+
+    // Ab hier zählt es als gültiger Versuch
+    attemptsLeft = Math.max(0, attemptsLeft - 1);
+    updateAttemptsLabel();
+
+    const [a, b] = missingNumbers;
+    const isG1Correct = (g1 === a || g1 === b);
+    const isG2Correct = (g2 === a || g2 === b);
+
+    if (isG1Correct) {
+      guess1Input.style.backgroundColor = "#dcfce7";
+      guess1Input.style.borderColor = "#16a34a";
+    } else {
+      guess1Input.style.backgroundColor = "#fee2e2";
+      guess1Input.style.borderColor = "#b91c1c";
+    }
+
+    if (isG2Correct) {
+      guess2Input.style.backgroundColor = "#dcfce7";
+      guess2Input.style.borderColor = "#16a34a";
+    } else {
+      guess2Input.style.backgroundColor = "#fee2e2";
+      guess2Input.style.borderColor = "#b91c1c";
+    }
+
+    const sortedGuess = [g1, g2].sort((x, y) => x - y);
+    const sortedMissing = [...missingNumbers].sort((x, y) => x - y);
+
+    if (sortedGuess[0] === sortedMissing[0] && sortedGuess[1] === sortedMissing[1]) {
+      resultEl.textContent = `✅ Geschafft! Die fehlenden Zahlen sind ${sortedMissing[0]} und ${sortedMissing[1]}.`;
+      resultEl.classList.add("result-ok");
+      setInputsEnabled(false); // Spielende
+      if (cooldownInterval) {
+        clearInterval(cooldownInterval);
+        cooldownInterval = null;
+      }
+      cooldownHint.textContent = "Super! Du hast die Aufgabe gelöst.";
       return;
     }
 
-    const sortedGuess = [g1, g2].sort((a, b) => a - b);
-    const sortedMissing = [...missingNumbers].sort((a, b) => a - b);
-
-    if (sortedGuess[0] === sortedMissing[0] && sortedGuess[1] === sortedMissing[1]) {
-      resultEl.textContent = `✅ Richtig! Die fehlenden Zahlen sind ${sortedMissing[0]} und ${sortedMissing[1]}.`;
-      resultEl.classList.add("result-ok");
-    } else {
-      resultEl.textContent = "❌ Noch nicht ganz richtig – schau dir die Zahlen nochmal genau an.";
+    if (attemptsLeft > 0) {
+      resultEl.textContent = `❌ Noch nicht ganz richtig – du hast noch ${attemptsLeft} von ${MAX_ATTEMPTS} Versuchen.`;
       resultEl.classList.add("result-error");
+    } else {
+      resultEl.textContent = "❌ Keine Versuche mehr – du bist jetzt für 2 Minuten gesperrt.";
+      resultEl.classList.add("result-error");
+      startCooldown();
     }
   }
 
-  function showSolution() {
-    const [a, b] = missingNumbers;
-    resultEl.textContent = `💡 Lösung: Die fehlenden Zahlen sind ${a} und ${b}.`;
-    resultEl.className = "result-text result-ok";
-  }
-
   checkBtn.addEventListener("click", checkSolution);
-  showSolutionBtn.addEventListener("click", showSolution);
 
   guess1Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
   guess2Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
