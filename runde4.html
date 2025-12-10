@@ -628,6 +628,60 @@
           Genau so hilft Struktur im Alltag dabei, Dinge schneller zu finden.
         </p>
         <div class="overlay-buttons">
-          <button class="btn btn-primary" id="close-success">Schließen<
+          <button class="btn btn-primary" id="close-success">Schließen</button>
+        </div>
+      `;
+      document.getElementById("close-success").addEventListener("click", () => {
+        overlay.style.display = "none";
+      });
 
+      return;
+    }
 
+    // Versuchslogik: nur wenn irgendetwas FALSCH ist, wird ein Versuch abgezogen
+    const anyWrong =
+      (filled1 && !isG1Correct) ||
+      (filled2 && !isG2Correct);
+
+    const anyCorrect =
+      (filled1 && isG1Correct) ||
+      (filled2 && isG2Correct);
+
+    if (!anyWrong && anyCorrect) {
+      // alles, was eingetragen wurde, ist richtig – aber noch nicht komplett
+      resultEl.textContent = "✅ Diese Zahl(en) stimmt/stimmen schon – dir fehlt noch die andere Zahl.";
+      resultEl.classList.add("result-ok");
+      return; // kein Versuch verbraucht
+    }
+
+    if (anyWrong) {
+      attemptsLeft = Math.max(0, attemptsLeft - 1);
+      updateAttemptsLabel();
+    }
+
+    if (anyWrong && attemptsLeft > 0) {
+      resultEl.textContent = `❌ Noch nicht ganz richtig – du hast noch ${attemptsLeft} von ${MAX_ATTEMPTS} Versuchen.`;
+      resultEl.classList.add("result-error");
+    } else if (anyWrong && attemptsLeft === 0) {
+      resultEl.textContent = "❌ Keine Versuche mehr – du bist jetzt für 2 Minuten gesperrt.";
+      resultEl.classList.add("result-error");
+      startCooldown();
+    }
+  }
+
+  checkBtn.addEventListener("click", checkSolution);
+  guess1Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
+  guess2Input.addEventListener("keydown", e => { if (e.key === "Enter") checkSolution(); });
+
+  window.addEventListener("load", () => {
+    const fromCfg = decodeMissingFromCfg();
+    if (!fromCfg) {
+      showMissingParamInfo();
+    } else {
+      missingNumbers = fromCfg;
+      startGame();
+    }
+  });
+</script>
+</body>
+</html>
