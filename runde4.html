@@ -9,7 +9,7 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f4f6;
+      background: radial-gradient(circle at top, #ffffff 0, #f3f4f6 40%, #e5e7eb 100%);
       color: #111827;
       display: flex;
       justify-content: center;
@@ -22,16 +22,52 @@
       width: 100%;
       max-width: 1200px;
       background: #ffffff;
-      border-radius: 0;
-      padding: 0 0 20px;
+      border-radius: 14px;
+      padding: 0 0 18px;
       box-shadow:
-        0 12px 24px rgba(0,0,0,0.18),
+        0 18px 40px rgba(15,23,42,0.22),
         0 0 0 1px rgba(209,213,219,0.9);
-      border-top: 6px solid #A6192E;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 22px;
+      background: linear-gradient(90deg, #A6192E, #7f1222);
+      color: #f9fafb;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.35);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 600;
+      background: rgba(0,0,0,0.12);
+    }
+
+    .top-bar-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .top-bar-right {
+      font-size: 0.8rem;
+      opacity: 0.9;
     }
 
     .game-header {
-      padding: 14px 24px 10px;
+      padding: 14px 24px 12px;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
       justify-content: space-between;
@@ -42,9 +78,9 @@
 
     .title-block h1 {
       margin: 0;
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       letter-spacing: 0.02em;
-      color: #A6192E;
+      color: #111827;
       font-weight: 700;
     }
 
@@ -73,6 +109,7 @@
       border: 1px solid #d1d5db;
       background: #f9fafb;
       color: #111827;
+      white-space: nowrap;
     }
 
     .badge {
@@ -112,15 +149,15 @@
 
     .btn-primary {
       border-color: #A6192E;
-      background: #A6192E;
+      background: linear-gradient(135deg, #A6192E, #d12440);
       color: #f9fafb;
       font-weight: 600;
-      box-shadow: 0 8px 16px rgba(166,25,46,0.35);
+      box-shadow: 0 8px 18px rgba(166,25,46,0.45);
     }
 
     .btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 12px 22px rgba(166,25,46,0.45);
+      box-shadow: 0 12px 24px rgba(166,25,46,0.55);
     }
 
     .hint {
@@ -130,25 +167,37 @@
 
     .board-wrapper {
       position: relative;
-      margin-top: 8px;
-      padding: 0 24px 0;
+      margin-top: 6px;
+      padding: 0 24px 4px;
+    }
+
+    .board-shell {
+      border-radius: 14px;
+      padding: 12px;
+      background: radial-gradient(circle at top, #f9fafb 0, #eef2ff 32%, #e5e7eb 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(148,163,184,0.35),
+        0 16px 30px rgba(15,23,42,0.18);
     }
 
     .board {
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.6);
       overflow: hidden;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
       background-color: #ffffff;
+      box-shadow:
+        inset 0 0 30px rgba(15,23,42,0.25);
     }
 
     .round-4 {
       background-image: url("runde4.png");
+      background-blend-mode: multiply;
     }
 
     .number-bubble {
@@ -160,10 +209,11 @@
       justify-content: center;
       font-weight: 700;
       color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      box-shadow:
+        0 4px 8px rgba(15,23,42,0.35),
+        0 0 0 1px rgba(15,23,42,0.35);
       padding: 0;
-      border: 2px solid rgba(0,0,0,0.15);
     }
 
     .board.debug .number-bubble {
@@ -184,7 +234,15 @@
       border: 1px solid #d1d5db;
       font-size: 0.9rem;
       text-align: center;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      background: #f9fafb;
+    }
+
+    .answer-panel input[type="number"]:focus {
+      outline: none;
+      border-color: #A6192E;
+      box-shadow: 0 0 0 2px rgba(166,25,46,0.25);
+      background: #ffffff;
     }
 
     .result-text {
@@ -198,7 +256,7 @@
     .overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at center, rgba(17,24,39,0.55), rgba(17,24,39,0.8));
+      background: radial-gradient(circle at center, rgba(17,24,39,0.55), rgba(17,24,39,0.9));
       display: flex;
       justify-content: center;
       align-items: center;
@@ -207,18 +265,18 @@
 
     .overlay-card {
       background: #ffffff;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 20px 22px;
       border: 1px solid #d1d5db;
-      max-width: 440px;
+      max-width: 460px;
       text-align: center;
-      box-shadow: 0 18px 36px rgba(0,0,0,0.35);
+      box-shadow: 0 22px 44px rgba(0,0,0,0.45);
     }
 
     .overlay-card h2 {
       margin-top: 0;
       margin-bottom: 8px;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       color: #A6192E;
     }
 
@@ -236,28 +294,63 @@
       flex-wrap: wrap;
     }
 
-    @media (max-width: 768px) {
+    .footer {
+      padding: 6px 24px 0;
+      font-size: 0.75rem;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer span b {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    @media (max-width: 900px) {
       .game-container {
-        padding-bottom: 14px;
-      }
-      .title-block h1 {
-        font-size: 1.35rem;
+        border-radius: 0;
+        box-shadow: none;
       }
       .board-wrapper {
-        padding: 0 12px;
+        padding: 0 14px 4px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .title-block h1 {
+        font-size: 1.3rem;
+      }
+      .board-shell {
+        padding: 8px;
       }
       .board {
         aspect-ratio: 9 / 16;
+      }
+      .info-grid {
+        justify-content: flex-start;
       }
     }
   </style>
 </head>
 <body>
 <div class="game-container">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="logo-pill">Linde Material Handling</div>
+      <div class="top-bar-title">6S Trainingsspiel – Zahlen finden</div>
+    </div>
+    <div class="top-bar-right">
+      Runde 4 · Fokus: Suchaufwand & Struktur
+    </div>
+  </div>
+
   <div class="game-header">
     <div class="title-block">
-      <h1>Runde 4 – Welche Zahlen fehlen?</h1>
-      <p>Auf dieser Folie verstecken sich die Zahlen <strong>1 bis 49</strong> – aber <strong>2 fehlen</strong>…</p>
+      <h1>Welche Zahlen fehlen?</h1>
+      <p>Die Zahlen <strong>1 bis 49</strong> sind überall auf der Fläche verteilt – aber <strong>2 fehlen</strong>…</p>
     </div>
     <div class="info-grid">
       <div class="badge">
@@ -276,25 +369,32 @@
 
   <div class="controls-row">
     <div class="answer-panel">
-      <span class="hint">Trage die zwei fehlenden Zahlen ein:</span>
+      <span class="hint">Trage die fehlenden Zahlen ein:</span>
       <input type="number" id="guess1" min="1" max="49" />
       <input type="number" id="guess2" min="1" max="49" />
       <button class="btn btn-primary" id="check-btn">Lösung prüfen</button>
     </div>
     <div>
       <div class="hint" id="cooldown-hint">
-        Tipp: Du kannst auch erstmal nur eine Zahl eintragen und prüfen.
+        Du kannst auch erstmal nur eine Zahl eintragen und prüfen.
       </div>
       <div id="result" class="result-text"></div>
     </div>
   </div>
 
   <div class="board-wrapper">
-    <div class="board round-4" id="board"></div>
+    <div class="board-shell">
+      <div class="board round-4" id="board"></div>
+    </div>
 
     <div class="overlay" id="overlay" style="display:none;">
       <div class="overlay-card" id="overlay-content"></div>
     </div>
+  </div>
+
+  <div class="footer">
+    <span><b>Hinweis:</b> Eine richtige Zahl wird grün, eine falsche rot – Versuche werden nur bei falschen Zahlen abgezogen.</span>
+    <span>5 Versuche · danach 2 Minuten Pause</span>
   </div>
 </div>
 
@@ -425,7 +525,7 @@
       while (!placed && attempts < maxAttemptsPerNumber) {
         attempts++;
 
-        const size = 3.5 + Math.random() * 5; // kleinere + größere Bubbles
+        const size = 3.5 + Math.random() * 5;
         const x = size / 2 + Math.random() * (100 - size);
         const y = size / 2 + Math.random() * (100 - size);
 
@@ -459,20 +559,16 @@
       el.style.width = item.size + "%";
       el.style.height = item.size + "%";
 
-      // relative Fontgröße – etwas variieren
       const baseFontFactor = 0.55 + Math.random() * 0.25;
       el.style.fontSize = (item.size * baseFontFactor) + "vw";
 
-      // Farbe
       const color = colorPalette[item.number % colorPalette.length];
       el.style.backgroundColor = color;
 
-      // zufällige Schriftart & Schriftschnitt
       const fontFamily = fontFamilies[item.number % fontFamilies.length];
       el.style.fontFamily = fontFamily;
       el.style.fontWeight = Math.random() > 0.5 ? "700" : "800";
 
-      // leichte Rotation
       const rotation = (Math.random() - 0.5) * 24;
       el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
@@ -524,7 +620,7 @@
       clearInterval(cooldownInterval);
       cooldownInterval = null;
     }
-    cooldownHint.textContent = "Tipp: Du kannst auch erstmal nur eine Zahl eintragen und prüfen.";
+    cooldownHint.textContent = "Du kannst auch erstmal nur eine Zahl eintragen und prüfen.";
 
     resultEl.textContent = "";
     resultEl.className = "result-text";
@@ -541,7 +637,6 @@
       return;
     }
 
-    // Farben zurücksetzen
     guess1Input.style.backgroundColor = "";
     guess2Input.style.backgroundColor = "";
     guess1Input.style.borderColor = "#d1d5db";
@@ -559,7 +654,7 @@
     if (!filled1 && !filled2) {
       resultEl.textContent = "Bitte trage mindestens eine Zahl zwischen 1 und 49 ein.";
       resultEl.classList.add("result-error");
-      return; // kein Versuch verbraucht
+      return;
     }
 
     if (filled1 && filled2 && g1 === g2) {
@@ -569,7 +664,7 @@
       guess2Input.style.backgroundColor = "#fee2e2";
       guess1Input.style.borderColor = "#b91c1c";
       guess2Input.style.borderColor = "#b91c1c";
-      return; // kein Versuch verbraucht
+      return;
     }
 
     const [a, b] = missingNumbers;
@@ -600,10 +695,9 @@
     }
 
     const sortedMissing = [...missingNumbers].sort((x, y) => x - y);
-
-    // Gewinnbedingung: beide Felder ausgefüllt und beide Zahlen exakt richtig
-    let isWin = false;
     const bothFilled = filled1 && filled2;
+    let isWin = false;
+
     if (bothFilled) {
       const sortedGuess = [g1, g2].sort((x, y) => x - y);
       isWin = sortedGuess[0] === sortedMissing[0] && sortedGuess[1] === sortedMissing[1];
@@ -638,7 +732,6 @@
       return;
     }
 
-    // Versuchslogik: nur wenn irgendetwas FALSCH ist, wird ein Versuch abgezogen
     const anyWrong =
       (filled1 && !isG1Correct) ||
       (filled2 && !isG2Correct);
@@ -648,10 +741,9 @@
       (filled2 && isG2Correct);
 
     if (!anyWrong && anyCorrect) {
-      // alles, was eingetragen wurde, ist richtig – aber noch nicht komplett
       resultEl.textContent = "✅ Diese Zahl(en) stimmt/stimmen schon – dir fehlt noch die andere Zahl.";
       resultEl.classList.add("result-ok");
-      return; // kein Versuch verbraucht
+      return;
     }
 
     if (anyWrong) {
